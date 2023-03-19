@@ -1,0 +1,16 @@
+# Define the topic names for the 
+home_position: [2.3201287428485315, -2.496607919732565, 1.5602281093597412, -1.4053343695453187, 4.736725807189941, 0.008569419384002686]
+gripper_state_topic: /gripper_state 
+joint_state_topic: /joint_states
+trj_state_topic: /trajectory_state
+tcp_frame_name: tcp_link
+env_camera_topic: /env_cameras/get_frames
+env_camera_name: ['camera_front', camera_lateral_right, camera_lateral_left]
+frame_rate: 20
+
+# Task Related information
+saving_folder: /home/ciccio/Desktop/real_robot_dataset
+task_name: pick_place
+task_id: 0
+
+

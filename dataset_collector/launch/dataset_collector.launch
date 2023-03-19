@@ -1,0 +1,8 @@
+<launch>
+    <!--Load parameters on parameter server-->
+    <rosparam command="load" file="$(find dataset_collector)/config/dataset_collector.yaml" />
+
+    <!-- Run node -->
+    <node name="dataset_collector" pkg="dataset_collector" type="dataset_collector_node.py"  respawn="true" output="screen"/>
+ 
+</launch>
