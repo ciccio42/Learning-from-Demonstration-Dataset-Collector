@@ -1,5 +1,7 @@
 # Define the topic names for the 
-home_position: [2.3201287428485315, -2.496607919732565, 1.5602281093597412, -1.4053343695453187, 4.736725807189941, 0.008569419384002686]
+# NOTE: With respect to /joint_states elbow and shoulder_pan MUST BE INVERTED
+# shoulder_pan, shoulder_lift, elbow, wrist1, wrist2, wrist3
+home_position: [1.6348429918289185, -2.0773707828917445, 1.9911730925189417, -1.449095369582512, 4.7125244140625, 0.0024554627016186714]
 gripper_state_topic: /gripper_state 
 joint_state_topic: /joint_states
 trj_state_topic: /trajectory_state

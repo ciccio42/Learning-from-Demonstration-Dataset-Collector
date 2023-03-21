@@ -39,6 +39,7 @@ class TrajectoryCollector():
 
         # moveit service
         self._home_pos = home_pos
+        rospy.loginfo(self._home_pos)
         self._moveit_service_client = rospy.ServiceProxy("/go_to_joint", GoToJoint, persistent=True)
 
         # camera client service
@@ -66,11 +67,12 @@ class TrajectoryCollector():
         self._trajectory_cnt = 0
         self._saving_folder = saving_folder
         self._task_name = task_name
-        self._task_id = task_id
+        self._task_id =  '{:02}'.format(task_id)
 
         try:
-            rospy.loginfo(f"Running Task {task_name} - ID {task_id}")
-            self._saving_folder = os.path.join(self._saving_folder, task_name, f"task_{str(task_id)}")
+            rospy.loginfo(f"Running Task {task_name} - ID {self._task_id}")
+           
+            self._saving_folder = os.path.join(self._saving_folder, task_name, f"task_{self._task_id}")
             os.makedirs(self._saving_folder)
         except Exception as e:
             print(e)
@@ -163,15 +165,16 @@ class TrajectoryCollector():
         self._step = 0
         self._trajectory = Trajectory()
         # wait for going in home position
-        rospy.loginfo("Press enter to go to gome: ")
-        enter = input()
-        while enter != " ":
-            # ask for going to home position
-            home_joint_pos_req = GoToJointRequest()
-            home_joint_pos_req.joint_goal_pos = np.array(home_joint_pos_req)
-            result = self._moveit_service_client.call(GoToJointRequest())
-            if result.success:
-                rospy.loginfo("Robot in home position, ready to get a new trajectory")
+        enter = None
+        while enter != "":
+            rospy.loginfo("Press enter to go to gome: ")
+            enter = input()
+        # ask for going to home position
+        home_joint_pos_req = GoToJointRequest()
+        home_joint_pos_req.joint_goal_pos = np.array(self._home_pos)
+        result = self._moveit_service_client.call(home_joint_pos_req)
+        if result.success:
+            rospy.loginfo_once("Robot in home position, ready to get a new trajectory")
 
     def get_message(self):
         exception=True
