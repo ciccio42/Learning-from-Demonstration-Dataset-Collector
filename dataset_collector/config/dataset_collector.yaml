@@ -1,18 +1,17 @@
 # Define the topic names for the 
 # NOTE: With respect to /joint_states elbow and shoulder_pan MUST BE INVERTED
 # shoulder_pan, shoulder_lift, elbow, wrist1, wrist2, wrist3
-home_position: [1.6348429918289185, -2.0773707828917445, 1.9911730925189417, -1.449095369582512, 4.7125244140625, 0.0024554627016186714]
+home_position: [1.636146903038025, -1.7759367428221644, 2.2431824843036097, -2.017546316186422, 4.7087507247924805, 0.002162999240681529]
+
 gripper_state_topic: /gripper_state 
 joint_state_topic: /joint_states
 trj_state_topic: /trajectory_state
 tcp_frame_name: tcp_link
-env_camera_topic: /env_cameras/get_frames
-env_camera_name: ['camera_front', camera_lateral_right, camera_lateral_left]
+env_camera_topic: /get_frames
+env_camera_name: ['camera_front', "camera_lateral_right", "camera_lateral_left", "eye_in_hand"]
 frame_rate: 20
 
 # Task Related information
-saving_folder: /home/ciccio/Desktop/real_robot_dataset
-task_name: pick_place
+saving_folder: /media/ciccio/Sandisk/real-world-dataset
+task_name: nut_assembly
 task_id: 0
-
-
