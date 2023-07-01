@@ -29,7 +29,7 @@ class TrajectoryCollector():
     GRIPPER_QVEL = 'gripper_qvel'
     EE_AA = 'ee_aa'
 
-    def __init__(self, env_camera_name: list, env_camera_topic_name: str, gripper_state_topic: str, joint_state_topic: str, trj_state_topic: str, tcp_frame_name: str, frame_rate: int, saving_folder: str, task_name: str, task_id: str, home_pos: list):
+    def __init__(self, env_camera_name: list, env_camera_topic_name: str, gripper_state_topic: str, joint_state_topic: str, trj_state_topic: str, tcp_frame_name: str, frame_rate: int, saving_folder: str, task_name: str, task_id: str, start_trj_cnt: int, home_pos: list):
 
         # Set rostopic name parameters
         self._gripper_state_topic = gripper_state_topic
@@ -37,7 +37,7 @@ class TrajectoryCollector():
         self._trj_state_topic = trj_state_topic
         self._tcp_frame_name = tcp_frame_name
         self._frame = frame_rate
-        self._trajectory_cnt = 0
+        self._trajectory_cnt = start_trj_cnt
 
         # moveit service
         self._home_pos = home_pos
@@ -69,7 +69,6 @@ class TrajectoryCollector():
                 rospy.logerr(e)
 
         # Trajectory cnt, saving folder
-        self._trajectory_cnt = 0
         self._saving_folder = saving_folder
         self._task_name = task_name
         self._task_id = '{:02}'.format(task_id)
@@ -101,7 +100,11 @@ class TrajectoryCollector():
         for j, (color_msg, depth_msg) in enumerate(zip(env_frames.color_frames, env_frames.depth_frames)):
             color_cv_image = self._bridge.imgmsg_to_cv2(
                 color_msg, desired_encoding='rgba8')
-            color_cv_image = cv2.cvtColor(color_cv_image, cv2.COLOR_RGBA2RGB)
+            color_cv_image = cv2.cvtColor(
+                color_cv_image, cv2.COLOR_RGBA2RGB)
+            # cv2.imshow("prova", color_cv_image)
+            # cv2.waitKey(2000)
+            # cv2.destroyAllWindows()
             depth_cv_image = self._bridge.imgmsg_to_cv2(
                 depth_msg, desired_encoding='passthrough')
             if self._show_image and self._env_camera_name[j] == 'camera_front':
@@ -111,9 +114,8 @@ class TrajectoryCollector():
                 cv2.destroyAllWindows()
             obs[f"{self._env_camera_name[j]}_image"] = color_cv_image
             obs[f"{self._env_camera_name[j]}_depth"] = depth_cv_image
-
         # fill info
-        rospy.loginfo(f"Teleoperation state {state}")
+        # rospy.loginfo(f"Teleoperation state {state}")
         info = {'status': state}
 
         # create action
@@ -184,6 +186,7 @@ class TrajectoryCollector():
         # ask for going to home position
         home_joint_pos_req = GoToJointRequest()
         home_joint_pos_req.joint_goal_pos = np.array(self._home_pos)
+        home_joint_pos_req.stop_controllers = True
         result = self._moveit_service_client.call(home_joint_pos_req)
         if result.success:
             rospy.loginfo_once(
@@ -250,4 +253,8 @@ class TrajectoryCollector():
                 f"Collecting task {self._task_name} - Sub task {self._task_id} - Counter {self._trajectory_cnt}")
             trajectory_completed = False
             while not trajectory_completed:
+                # time_begin = rospy.Time.now()
                 trajectory_completed = self.get_message()
+                # time_end = rospy.Time.now()
+                # duration = time_end - time_begin
+                # rospy.loginfo(f"Wait for {duration.to_sec()} secs")
