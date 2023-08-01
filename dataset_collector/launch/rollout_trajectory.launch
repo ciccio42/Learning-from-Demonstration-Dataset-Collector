@@ -1,0 +1,11 @@
+<launch>
+    <!-- Path to the trajectory to rollout -->
+    <arg name="file_path"
+        default="/media/ciccio/Sandisk/real-world-dataset/pick_place/task_00/traj000.pkl" />
+
+    <!-- Run node -->
+    <node name="rollout_trajectory" pkg="dataset_collector" type="rollout_trajectories.py"
+        respawn="false" args="$(arg file_path)" output="screen">
+    </node>
+
+</launch>

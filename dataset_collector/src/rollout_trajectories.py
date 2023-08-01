@@ -7,7 +7,7 @@ import copy
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
-from ur5e_2f_85_controller.robotiq2f_85 import Robotiq2f85
+from controller.robotiq2f_85 import Robotiq2f85
 
 
 try:
@@ -217,19 +217,29 @@ class MoveGroupPythonInterfaceTutorial(object):
 
 
 if __name__ == '__main__':
+
+    myargv = rospy.myargv(argv=sys.argv)
+
     movegroup_interface = MoveGroupPythonInterfaceTutorial()
 
-    with open(PKL_FILE_PATH, "rb") as f:
+    file_path = myargv[1]
+    rospy.loginfo(f"Reading file {file_path}")
+    with open(file_path, "rb") as f:
         sample = pkl.load(f)
 
     trj = sample['traj']
-    print(trj.get(0)['obs'].keys())
+    # print(trj.get(0)['obs'].keys())
 
     for t in range(len(trj)):
         pos = trj.get(t)['obs']['eef_pos']
         quat = trj.get(t)['obs']['eef_quat']
         gripper_pos = trj.get(t)['obs']['gripper_qpos']
-        rospy.loginfo(f"Positiin {pos} - Gripper pos {gripper_pos}")
+        if t == 0:
+            home_pos = pos
+            home_quat = quat
+            home_gripper_pos = gripper_pos
+
+        rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
 
         success = movegroup_interface.go_to_pose_goal(
             position=pos, orientation=quat, gripper_pos=gripper_pos)
@@ -238,7 +248,14 @@ if __name__ == '__main__':
             input("Press enter to go to next waypoint")
         else:
             rospy.logerr("Failed to move")
-            break
+            rospy.logerr("Error during motion")
+            exit(-1)
 
     rospy.loginfo("Rollout completed")
+    pos[2] = pos[2] + 0.10
+    success = movegroup_interface.go_to_pose_goal(
+        position=pos, orientation=quat, gripper_pos=gripper_pos)
+    input("Press enter to go to home position")
+    success = movegroup_interface.go_to_pose_goal(
+        position=home_pos, orientation=home_quat, gripper_pos=home_gripper_pos)
     exit(1)
