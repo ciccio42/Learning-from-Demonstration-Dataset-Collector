@@ -102,8 +102,9 @@ class TrajectoryCollector():
                 color_msg, desired_encoding='rgba8')
             color_cv_image = cv2.cvtColor(
                 color_cv_image, cv2.COLOR_RGBA2RGB)
-            # cv2.imshow("prova", color_cv_image)
-            # cv2.waitKey(2000)
+            # if j == 3:
+            #     cv2.imshow("robot hand camera", color_cv_image)
+            #     cv2.waitKey(1)
             # cv2.destroyAllWindows()
             depth_cv_image = self._bridge.imgmsg_to_cv2(
                 depth_msg, desired_encoding='passthrough')
@@ -117,7 +118,7 @@ class TrajectoryCollector():
         # fill info
         # rospy.loginfo(f"Teleoperation state {state}")
         info = {'status': state}
-
+        rospy.loginfo(state)
         # create action
         action = np.array([tcp_pose.transform.translation.x,
                            tcp_pose.transform.translation.y,

@@ -1,0 +1,136 @@
+\begin{thebibliography}{10}
+
+\bibitem{bhutani2022attentive}
+Vishal Bhutani, Anima Majumder, Madhu Vankadari, Samrat Dutta, Aaditya Asati,
+  and Swagat Kumar.
+\newblock Attentive one-shot meta-imitation learning from visual demonstration.
+\newblock In {\em 2022 International Conference on Robotics and Automation
+  (ICRA)}, pages 8584--8590. IEEE, 2022.
+
+\bibitem{brohan2022rt}
+Anthony Brohan, Noah Brown, Justice Carbajal, Yevgen Chebotar, Joseph Dabis,
+  Chelsea Finn, Keerthana Gopalakrishnan, Karol Hausman, Alex Herzog, Jasmine
+  Hsu, et~al.
+\newblock Rt-1: Robotics transformer for real-world control at scale.
+\newblock {\em arXiv preprint arXiv:2212.06817}, 2022.
+
+\bibitem{brown2020language}
+Tom Brown, Benjamin Mann, Nick Ryder, Melanie Subbiah, Jared~D Kaplan, Prafulla
+  Dhariwal, Arvind Neelakantan, Pranav Shyam, Girish Sastry, Amanda Askell,
+  et~al.
+\newblock Language models are few-shot learners.
+\newblock {\em Advances in neural information processing systems},
+  33:1877--1901, 2020.
+
+\bibitem{dasari2021transformers}
+Sudeep Dasari and Abhinav Gupta.
+\newblock Transformers for one-shot visual imitation.
+\newblock In {\em Conference on Robot Learning}, pages 2071--2084. PMLR, 2021.
+
+\bibitem{finn2017model}
+Chelsea Finn, Pieter Abbeel, and Sergey Levine.
+\newblock Model-agnostic meta-learning for fast adaptation of deep networks.
+\newblock In {\em International conference on machine learning}, pages
+  1126--1135. PMLR, 2017.
+
+\bibitem{finn2018probabilistic}
+Chelsea Finn, Kelvin Xu, and Sergey Levine.
+\newblock Probabilistic model-agnostic meta-learning.
+\newblock {\em Advances in neural information processing systems}, 31, 2018.
+
+\bibitem{grill2003neural}
+Kalanit Grill-Spector.
+\newblock The neural basis of object perception.
+\newblock {\em Current opinion in neurobiology}, 13(2):159--166, 2003.
+
+\bibitem{hu2022learning}
+Ziye Hu, Wei Li, Zhongxue Gan, Weikun Guo, Jiwei Zhu, Xiang Gao, Xuyun Yang,
+  Yueyan Peng, Zhihao Zuo, James~Zhiqing Wen, et~al.
+\newblock Learning with dual demonstration domains: Random domain-adaptive
+  meta-learning.
+\newblock {\em IEEE Robotics and Automation Letters}, 7(2):3523--3530, 2022.
+
+\bibitem{james2018task}
+Stephen James, Michael Bloesch, and Andrew~J Davison.
+\newblock Task-embedded control networks for few-shot imitation learning.
+\newblock In {\em Conference on robot learning}, pages 783--795. PMLR, 2018.
+
+\bibitem{james2018tecnet}
+Stephen James, Michael Bloesch, and Andrew~J Davison.
+\newblock Task-embedded control networks for few-shot imitation learning.
+\newblock In {\em Conference on robot learning}, pages 783--795. PMLR, 2018.
+
+\bibitem{jang2022bc}
+Eric Jang, Alex Irpan, Mohi Khansari, Daniel Kappler, Frederik Ebert, Corey
+  Lynch, Sergey Levine, and Chelsea Finn.
+\newblock Bc-z: Zero-shot task generalization with robotic imitation learning.
+\newblock In {\em Conference on Robot Learning}, pages 991--1002. PMLR, 2022.
+
+\bibitem{johnson2017clevr}
+Justin Johnson, Bharath Hariharan, Laurens van~der Maaten, Li~Fei-Fei,
+  C.~Lawrence~Zitnick, and Ross Girshick.
+\newblock Clevr: A diagnostic dataset for compositional language and elementary
+  visual reasoning.
+\newblock In {\em Proceedings of the IEEE Conference on Computer Vision and
+  Pattern Recognition (CVPR)}, July 2017.
+
+\bibitem{levine2013guided}
+Sergey Levine and Vladlen Koltun.
+\newblock Guided policy search.
+\newblock In {\em International conference on machine learning}, pages 1--9.
+  PMLR, 2013.
+
+\bibitem{li2021meta}
+Jiayi Li, Tao Lu, Xiaoge Cao, Yinghao Cai, and Shuo Wang.
+\newblock Meta-imitation learning by watching video demonstrations.
+\newblock In {\em International Conference on Learning Representations}, 2021.
+
+\bibitem{corey2021LCI}
+Corey Lynch and Pierre Sermanet.
+\newblock {Language Conditioned Imitation Learning Over Unstructured Data}.
+\newblock In {\em Proceedings of Robotics: Science and Systems}, Virtual, July
+  2021.
+
+\bibitem{mandi2022towards}
+Zhao Mandi, Fangchen Liu, Kimin Lee, and Pieter Abbeel.
+\newblock Towards more generalizable one-shot visual imitation learning.
+\newblock In {\em 2022 International Conference on Robotics and Automation
+  (ICRA)}, pages 2434--2444, 2022.
+
+\bibitem{mandlekar2022matters}
+Ajay Mandlekar, Danfei Xu, Josiah Wong, Soroush Nasiriany, Chen Wang, Rohun
+  Kulkarni, Li~Fei-Fei, Silvio Savarese, Yuke Zhu, and Roberto
+  Mart{\'\i}n-Mart{\'\i}n.
+\newblock What matters in learning from offline human demonstrations for robot
+  manipulation.
+\newblock In {\em Conference on Robot Learning}, pages 1678--1690. PMLR, 2022.
+
+\bibitem{mees2022calvin}
+Oier Mees, Lukas Hermann, Erick Rosete-Beas, and Wolfram Burgard.
+\newblock Calvin: A benchmark for language-conditioned policy learning for
+  long-horizon robot manipulation tasks.
+\newblock {\em IEEE Robotics and Automation Letters}, 7(3):7327--7334, 2022.
+
+\bibitem{perez2018film}
+Ethan Perez, Florian Strub, Harm De~Vries, Vincent Dumoulin, and Aaron
+  Courville.
+\newblock Film: Visual reasoning with a general conditioning layer.
+\newblock In {\em Proceedings of the AAAI Conference on Artificial
+  Intelligence}, volume~32, 2018.
+
+\bibitem{singh2020scalable}
+Avi Singh, Eric Jang, Alexander Irpan, Daniel Kappler, Murtaza Dalal, Sergey
+  Levinev, Mohi Khansari, and Chelsea Finn.
+\newblock Scalable multi-task imitation learning with autonomous improvement.
+\newblock In {\em 2020 IEEE International Conference on Robotics and Automation
+  (ICRA)}, pages 2167--2173. IEEE, 2020.
+
+\bibitem{levine2018daml}
+Tianhe Yu, Chelsea Finn, Sudeep Dasari, Annie Xie, Tianhao Zhang, Pieter
+  Abbeel, and Sergey Levine.
+\newblock One-shot imitation from observing humans via domain-adaptive
+  meta-learning.
+\newblock In {\em Proceedings of Robotics: Science and Systems}, Pittsburgh,
+  Pennsylvania, June 2018.
+
+\end{thebibliography}

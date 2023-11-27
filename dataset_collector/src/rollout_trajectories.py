@@ -8,7 +8,7 @@ import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg
 from controller.robotiq2f_85 import Robotiq2f85
-
+import cv2
 
 try:
     from math import pi, tau, dist, fabs, cos
@@ -231,31 +231,34 @@ if __name__ == '__main__':
     # print(trj.get(0)['obs'].keys())
 
     for t in range(len(trj)):
-        pos = trj.get(t)['obs']['eef_pos']
-        quat = trj.get(t)['obs']['eef_quat']
-        gripper_pos = trj.get(t)['obs']['gripper_qpos']
-        if t == 0:
-            home_pos = pos
-            home_quat = quat
-            home_gripper_pos = gripper_pos
+        cv2.imshow(f'Frame {t}', trj[t]['obs'].get('camera_front_image'))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+    #     pos = trj.get(t)['obs']['eef_pos']
+    #     quat = trj.get(t)['obs']['eef_quat']
+    #     gripper_pos = trj.get(t)['obs']['gripper_qpos']
+    #     if t == 0:
+    #         home_pos = pos
+    #         home_quat = quat
+    #         home_gripper_pos = gripper_pos
 
-        rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
+    #     rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
 
-        success = movegroup_interface.go_to_pose_goal(
-            position=pos, orientation=quat, gripper_pos=gripper_pos)
-        if success:
-            rospy.loginfo("Next waypoint")
-            input("Press enter to go to next waypoint")
-        else:
-            rospy.logerr("Failed to move")
-            rospy.logerr("Error during motion")
-            exit(-1)
+    #     success = movegroup_interface.go_to_pose_goal(
+    #         position=pos, orientation=quat, gripper_pos=gripper_pos)
+    #     if success:
+    #         rospy.loginfo("Next waypoint")
+    #         input("Press enter to go to next waypoint")
+    #     else:
+    #         rospy.logerr("Failed to move")
+    #         rospy.logerr("Error during motion")
+    #         exit(-1)
 
-    rospy.loginfo("Rollout completed")
-    pos[2] = pos[2] + 0.10
-    success = movegroup_interface.go_to_pose_goal(
-        position=pos, orientation=quat, gripper_pos=gripper_pos)
-    input("Press enter to go to home position")
-    success = movegroup_interface.go_to_pose_goal(
-        position=home_pos, orientation=home_quat, gripper_pos=home_gripper_pos)
-    exit(1)
+    # rospy.loginfo("Rollout completed")
+    # pos[2] = pos[2] + 0.10
+    # success = movegroup_interface.go_to_pose_goal(
+    #     position=pos, orientation=quat, gripper_pos=gripper_pos)
+    # input("Press enter to go to home position")
+    # success = movegroup_interface.go_to_pose_goal(
+    #     position=home_pos, orientation=home_quat, gripper_pos=home_gripper_pos)
+    # exit(1)

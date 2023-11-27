@@ -15,4 +15,4 @@ frame_rate: 20
 saving_folder: /media/ciccio/Sandisk/real-world-dataset
 task_name: pick_place
 task_id: 0
-start_trj_cnt: 49
+start_trj_cnt: 27
