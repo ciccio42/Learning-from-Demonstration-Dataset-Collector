@@ -16,6 +16,65 @@ from cv_bridge import CvBridge
 from ur5e_2f_85_controller.srv import GoToJoint, GoToJointRequest
 import cv2
 
+ENV_OBJECTS = {
+    'pick_place': {
+        'obj_names': ['greenbox', 'yellowbox', 'bluebox', 'redbox', 'bin'],
+        'bin_position': [0.18, 0.00, 0.75],
+        'obj_dim': {'greenbox': [0.05, 0.055, 0.045],  # W, H, D
+                    'yellowbox': [0.05, 0.055, 0.045],
+                    'bluebox': [0.05, 0.055, 0.045],
+                    'redbox': [0.05, 0.055, 0.045],
+                    'bin': [0.6, 0.06, 0.15]},
+
+        "id_to_obj": {0: "greenbox",
+                      1: "yellowbox",
+                      2: "bluebox",
+                      3: "redbox"}
+    },
+
+    'nut_assembly': {
+        'obj_names': ['nut0', 'nut1', 'nut2'],
+        'ranges': [[0.10, 0.31], [-0.10, 0.10], [-0.31, -0.10]]
+    },
+
+    'camera_names': {'camera_front', 'camera_lateral_right', 'camera_lateral_left'},
+
+    'camera_fovx': 345.27,
+    'camera_fovy': 345.27,
+
+    'camera_pos': {'camera_front': [-0.002826249197217832,
+                                    0.45380661695322316,
+                                    0.5322894621129393],
+                   'camera_lateral_right': [-0.3582777207605626,
+                                            -0.44377700364575223,
+                                            0.561009214792732],
+                   'camera_lateral_left': [-0.32693157973832665,
+                                           0.4625646268626449,
+                                           0.5675614538972504]},
+
+    'camera_orientation': {'camera_front': [-0.00171609,
+                                            0.93633855,
+                                            -0.35105349,
+                                            0.00535055],
+                           'camera_lateral_right': [0.8623839571785069,
+                                                    -0.3396500629838305,
+                                                    0.12759260213488172,
+                                                    -0.3530607214016715],
+                           'camera_lateral_left': [-0.305029713753832,
+                                                   0.884334094984367,
+                                                   -0.33268049448458464,
+                                                   0.11930536771213586]}
+}
+
+
+object_loc = []
+
+
+def mouse_drawing(event, x, y, flags, params):
+    global object_loc, cnt, press
+    if event == cv2.EVENT_LBUTTONDOWN:
+        object_loc.append([x, y])
+
 
 class TrajectoryCollector():
 
@@ -52,7 +111,7 @@ class TrajectoryCollector():
         self._bridge = CvBridge()
         self._show_image = False
         self._env_camera_name = env_camera_name
-
+        self._obj_bb = dict()
         # Init tf listener for the TCP Pose
         self._tfBuffer = tf2_ros.Buffer()
         self._listener = tf2_ros.TransformListener(self._tfBuffer)
@@ -72,6 +131,7 @@ class TrajectoryCollector():
         self._saving_folder = saving_folder
         self._task_name = task_name
         self._task_id = '{:02}'.format(task_id)
+        self._task_id_number = task_id
 
         try:
             rospy.loginfo(f"Running Task {task_name} - ID {self._task_id}")
@@ -95,6 +155,7 @@ class TrajectoryCollector():
         obs[TrajectoryCollector.EE_AA] = self._quat2axisangle(
             obs[TrajectoryCollector.EEF_QUAT])
         obs[TrajectoryCollector.GRIPPER_QPOS] = gripper_q_pos
+        obj_bb = dict()
 
         # take env_frames
         for j, (color_msg, depth_msg) in enumerate(zip(env_frames.color_frames, env_frames.depth_frames)):
@@ -102,6 +163,41 @@ class TrajectoryCollector():
                 color_msg, desired_encoding='rgba8')
             color_cv_image = cv2.cvtColor(
                 color_cv_image, cv2.COLOR_RGBA2RGB)
+
+            if self._step == 0:
+                global object_loc
+                object_name_list = ENV_OBJECTS[self._task_name]['obj_names']
+                target_obj_id = int(self._task_id_number/4)
+                rospy.logdebug(f"Target object id {target_obj_id}")
+                obj_bb[self._env_camera_name[j]] = dict()
+                rospy.logdebug(f"Target object id {target_obj_id}")
+                # init bounding-center position for bb-generation
+                for obj_id, obj_name in enumerate(object_name_list):
+                    obj_bb[self._env_camera_name[j]][obj_name] = dict()
+                    if obj_name == ENV_OBJECTS[self._task_name]["id_to_obj"][target_obj_id]:
+                        rospy.loginfo(
+                            f"Get position for target object {obj_name}")
+                        img_t = color_cv_image
+                    else:
+                        rospy.loginfo(
+                            f"Get position for object {obj_name}")
+                        img_t = color_cv_image
+                    cv2.imshow(f'Frame {self._step}', img_t)
+                    cv2.setMouseCallback(f'Frame {self._step}', mouse_drawing)
+                    k = cv2.waitKey(0)
+                    cv2.destroyAllWindows()
+                    if k != 32:
+                        object_loc.append([-1, -1])
+
+                    obj_bb[self._env_camera_name[j]][obj_name]['center'] = [
+                        object_loc[obj_id][0], object_loc[obj_id][1]]
+                    obj_bb[self._env_camera_name[j]][obj_name]['upper_left_corner'] = [
+                        -1, -1]
+                    obj_bb[self._env_camera_name[j]][obj_name]['bottom_right_corner'] = [
+                        -1, -1]
+
+                object_loc = []
+
             # if j == 3:
             #     cv2.imshow("robot hand camera", color_cv_image)
             #     cv2.waitKey(1)
@@ -115,6 +211,8 @@ class TrajectoryCollector():
                 cv2.destroyAllWindows()
             obs[f"{self._env_camera_name[j]}_image"] = color_cv_image
             obs[f"{self._env_camera_name[j]}_depth"] = depth_cv_image
+            obs['obj_bb'] = obj_bb
+
         # fill info
         # rospy.loginfo(f"Teleoperation state {state}")
         info = {'status': state}

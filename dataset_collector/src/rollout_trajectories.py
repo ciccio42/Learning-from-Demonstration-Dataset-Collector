@@ -9,6 +9,8 @@ import moveit_msgs.msg
 import geometry_msgs.msg
 from controller.robotiq2f_85 import Robotiq2f85
 import cv2
+import numpy as np
+from utils import *
 
 try:
     from math import pi, tau, dist, fabs, cos
@@ -25,6 +27,20 @@ from std_msgs.msg import String
 from moveit_commander.conversions import pose_to_list
 
 PKL_FILE_PATH = "/media/ciccio/Sandisk/real-world-dataset/pick_place/task_00/traj000.pkl"
+
+T_aruco_table = np.array([[-1.0, 0.0, 0.0, 0.0],
+                          [0.0, -1.0, 0.0, 0.06],
+                          [0.0, 0.0, 1.0, 0.0],
+                          [0, 0, 0, 1]])
+T_aruco_bl = T_aruco_table  @ np.array([[-1, 0.0, 0, 0.00],
+                                        [0.0, -1.0, 0, 0.612],
+                                        [0, 0, 1, 0.120],
+                                        [0, 0, 0, 1]])
+
+camera_intrinsic = np.array([[345.2712097167969, 0.0, 337.5007629394531],
+                             [0.0, 345.2712097167969,
+                              179.0137176513672],
+                             [0, 0, 1]])
 
 
 def all_close(goal, actual, tolerance):
@@ -227,32 +243,88 @@ if __name__ == '__main__':
     with open(file_path, "rb") as f:
         sample = pkl.load(f)
 
+    cv2.namedWindow("Camera view", cv2.WINDOW_NORMAL)
+
     trj = sample['traj']
     # print(trj.get(0)['obs'].keys())
 
+    # cv2.imshow(f'Frame {0}', trj[0]['obs'].get('camera_front_image'))
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    camera_quat = ENV_OBJECTS['camera_orientation']["camera_front"]
+    r_aruco_camera = quat2mat(
+        np.array(camera_quat))
+    p_aruco_camera = ENV_OBJECTS['camera_pos']["camera_front"]
+
+    camera_quat = ENV_OBJECTS['camera_orientation']["camera_front"]
+    r_camera_aruco = quat2mat(
+        np.array(camera_quat)).T
+    p_camera_aruco = -np.matmul(r_camera_aruco, np.array(
+        [ENV_OBJECTS['camera_pos']["camera_front"]]).T)
+    T_camera_aruco = np.append(
+        r_camera_aruco, p_camera_aruco, axis=1)
+
     for t in range(len(trj)):
-        cv2.imshow(f'Frame {t}', trj[t]['obs'].get('camera_front_image'))
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-    #     pos = trj.get(t)['obs']['eef_pos']
-    #     quat = trj.get(t)['obs']['eef_quat']
-    #     gripper_pos = trj.get(t)['obs']['gripper_qpos']
-    #     if t == 0:
-    #         home_pos = pos
-    #         home_quat = quat
-    #         home_gripper_pos = gripper_pos
+        # cv2.imshow(f'Frame {t}', trj[t]['obs'].get('camera_front_image'))
+        # cv2.waitKey(100)
+        # cv2.destroyAllWindows()
+        pos = trj.get(t)['obs']['eef_pos']
+        quat = trj.get(t)['obs']['eef_quat']
+        gripper_pos = trj.get(t)['obs']['gripper_qpos']
 
-    #     rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
+        img = np.array(trj.get(
+            t)['obs'][f'camera_front_image'])
 
-    #     success = movegroup_interface.go_to_pose_goal(
-    #         position=pos, orientation=quat, gripper_pos=gripper_pos)
-    #     if success:
-    #         rospy.loginfo("Next waypoint")
-    #         input("Press enter to go to next waypoint")
-    #     else:
-    #         rospy.logerr("Failed to move")
-    #         rospy.logerr("Error during motion")
-    #         exit(-1)
+        # convert gripper_pos to pixel
+        gripper_pos_bl = np.array(
+            [trj[t]['action'][:3]]).T
+        gripper_quat_bl = np.array(
+            trj[t]['action'][3:-1])
+        rospy.loginfo(f"Gripper position {pos} - Gripper orientation {quat} ")
+        rospy.loginfo(
+            f"Gripper action pos {gripper_pos_bl} - Gripper action orientation {gripper_quat_bl} ")
+
+        gripper_rot_bl = quat2mat(
+            np.array(gripper_quat_bl))
+        T_gripper_bl = np.concatenate(
+            (gripper_rot_bl, gripper_pos_bl), axis=1)
+        T_gripper_bl = np.concatenate(
+            (T_gripper_bl, np.array([[0, 0, 0, 1]])), axis=0)
+
+        print(f"TCP_bl\n{gripper_pos_bl}")
+        TCP_aruco = T_aruco_bl @ T_gripper_bl
+        print(f"TCP_aruco:\n{TCP_aruco}")
+        print(f"T_camera_aruco\n{T_camera_aruco}")
+        tcp_camera = np.array(
+            [(T_camera_aruco @ TCP_aruco)[:3, -1]]).T
+        tcp_camera = tcp_camera/tcp_camera[2][0]
+        print(f"TCP camera:\n{tcp_camera}")
+        tcp_pixel_cord = np.array(
+            camera_intrinsic @ tcp_camera, dtype=np.uint32)
+        print(f"Pixel coordinates\n{tcp_pixel_cord}")
+
+        # plot point
+        img = cv2.circle(
+            img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
+        cv2.imshow("Camera view", img)
+        cv2.waitKey(500)
+        if t == 0:
+            home_pos = pos
+            home_quat = quat
+            home_gripper_pos = gripper_pos
+
+        rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
+
+        # success = movegroup_interface.go_to_pose_goal(
+        #     position=pos, orientation=quat, gripper_pos=gripper_pos)
+        # if success:
+        #     rospy.loginfo("Next waypoint")
+        #     rospy.sleep(2)
+        #     # input("Press enter to go to next waypoint")
+        # else:
+        #     rospy.logerr("Failed to move")
+        #     rospy.logerr("Error during motion")
+        #     exit(-1)
 
     # rospy.loginfo("Rollout completed")
     # pos[2] = pos[2] + 0.10
@@ -261,4 +333,4 @@ if __name__ == '__main__':
     # input("Press enter to go to home position")
     # success = movegroup_interface.go_to_pose_goal(
     #     position=home_pos, orientation=home_quat, gripper_pos=home_gripper_pos)
-    # exit(1)
+    exit(1)

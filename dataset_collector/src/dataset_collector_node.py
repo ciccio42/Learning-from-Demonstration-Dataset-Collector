@@ -5,6 +5,10 @@ from trajectory_collector import TrajectoryCollector
 
 def main():
     rospy.init_node("dataset_collector", log_level=rospy.INFO)
+    import debugpy
+    debugpy.listen(('0.0.0.0', 5678))
+    print("Waiting for debugger attach")
+    debugpy.wait_for_client()
 
     # 1. Get conf parameters from parameter server
     gripper_state_topic = rospy.get_param("/gripper_state_topic")
