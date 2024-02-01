@@ -111,7 +111,7 @@ if __name__ == '__main__':
 
     files_path = glob.glob(os.path.join(args.task_path, "*.pkl"))
     for indx, file_path in enumerate(files_path):
-        if indx == 0:
+        if True:  # indx == 0:
             logger.info(f"Reading file {file_path}")
             object_loc = []
             with open(file_path, "rb") as f:
@@ -428,7 +428,7 @@ if __name__ == '__main__':
                         if obj_name == 'bin':
                             print(obj_bb_novel)
                     # draw center
-                    if camera_name == 'camera_lateral_left':
+                    if camera_name == 'camera_front':
                         img = np.array(traj.get(
                             t)['obs'][f'{camera_name}_image'])
 
@@ -457,12 +457,12 @@ if __name__ == '__main__':
                         logger.debug(f"Pixel coordinates\n{tcp_pixel_cord}")
 
                         # plot point
-                        img = cv2.circle(
-                            img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
+                        # img = cv2.circle(
+                        #     img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
 
-                        plot_bb(img=img,
-                                obj_bb=obj_bb_novel[camera_name],
-                                show_image=True)
+                        # plot_bb(img=img,
+                        #         obj_bb=obj_bb_novel[camera_name],
+                        #         show_image=True)
 
                     # print(obj_bb)
                     traj_bb.append(copy.deepcopy(obj_bb_novel))
