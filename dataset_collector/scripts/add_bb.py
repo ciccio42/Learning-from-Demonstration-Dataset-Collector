@@ -84,16 +84,16 @@ def plot_bb(img, obj_bb, show_image=False):
     assert indx == NUM_OBJ, "Number of bounding box must be equal to number of objects"
     if show_image:
         cv2.imwrite("test_bb.png", img)
-        cv2.imshow("Test", img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        # cv2.imshow("Test", img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
 
     argParser = argparse.ArgumentParser()
     argParser.add_argument(
-        "--task_path", type=str, default="/media/ciccio/Sandisk/real-world-dataset/pick_place/task_01")
+        "--task_path", type=str, default="//media/ciccio/Sandisk/real-world-dataset/only_frontal/reduced_space/pick_place/task_01")
     argParser.add_argument(
         "--debug", action='store_true')
 
@@ -460,9 +460,9 @@ if __name__ == '__main__':
                         # img = cv2.circle(
                         #     img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
 
-                        # plot_bb(img=img,
-                        #         obj_bb=obj_bb_novel[camera_name],
-                        #         show_image=True)
+                        plot_bb(img=img,
+                                obj_bb=obj_bb_novel[camera_name],
+                                show_image=t == 0)
 
                     # print(obj_bb)
                     traj_bb.append(copy.deepcopy(obj_bb_novel))

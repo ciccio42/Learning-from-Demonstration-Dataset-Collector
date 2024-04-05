@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import rospy
-from trajectory_collector import TrajectoryCollector
+from trajectory_collector import TrajectoryCollector, TrajectoryCollectorHuman
+from pynput import keyboard
 
 
 def main():
@@ -23,20 +24,37 @@ def main():
     env_camera_topic = rospy.get_param("env_camera_topic")
     env_camera_name = rospy.get_param("env_camera_name")
     robot_home = rospy.get_param("home_position")
+    collect_with_joy = rospy.get_param("collect_with_joy")
 
-    # 2. Init TrajectoryCollector
-    trajectory_collector = TrajectoryCollector(env_camera_name=env_camera_name,
-                                               gripper_state_topic=gripper_state_topic,
-                                               env_camera_topic_name=env_camera_topic,
-                                               joint_state_topic=joint_state_topic,
-                                               trj_state_topic=trj_state_topic,
-                                               tcp_frame_name=tcp_frame_name,
-                                               frame_rate=frame_rate,
-                                               saving_folder=saving_folder,
-                                               task_name=task_name,
-                                               task_id=task_id,
-                                               start_trj_cnt=start_trj_cnt,
-                                               home_pos=robot_home)
+    human = rospy.get_param("human")
+
+    if not human:
+        rospy.loginfo("Running TrajectoryCollector")
+        # 2. Init TrajectoryCollector
+        trajectory_collector = TrajectoryCollector(env_camera_name=env_camera_name,
+                                                   gripper_state_topic=gripper_state_topic,
+                                                   env_camera_topic_name=env_camera_topic,
+                                                   joint_state_topic=joint_state_topic,
+                                                   trj_state_topic=trj_state_topic,
+                                                   tcp_frame_name=tcp_frame_name,
+                                                   frame_rate=frame_rate,
+                                                   saving_folder=saving_folder,
+                                                   task_name=task_name,
+                                                   task_id=task_id,
+                                                   start_trj_cnt=start_trj_cnt,
+                                                   home_pos=robot_home,
+                                                   collect_with_joy=collect_with_joy)
+    else:
+        # 2. Init TrajectoryCollector
+        rospy.loginfo("Running TrajectoryCollectorHuman")
+        trajectory_collector = TrajectoryCollectorHuman(env_camera_name=env_camera_name,
+                                                        env_camera_topic_name=env_camera_topic,
+                                                        trj_state_topic=trj_state_topic,
+                                                        frame_rate=frame_rate,
+                                                        saving_folder=saving_folder,
+                                                        task_name=task_name,
+                                                        task_id=task_id,
+                                                        start_trj_cnt=start_trj_cnt)
 
     trajectory_collector.run()
 

@@ -12,7 +12,9 @@ env_camera_name: ['camera_front'] #, "camera_lateral_left", "camera_lateral_righ
 frame_rate: 20
 
 # Task Related information
-saving_folder: /media/ciccio/Sandisk/real-world-dataset/only_frontal
+saving_folder: /media/ciccio/Sandisk/real-world-dataset/only_frontal/reduced_space
 task_name: pick_place
-task_id: 0
-start_trj_cnt: 100
+task_id: 1
+start_trj_cnt: 41
+collect_with_joy: True
+human: False

@@ -45,6 +45,29 @@ camera_intrinsic = np.array([[345.2712097167969, 0.0, 337.5007629394531],
                              [0, 0, 1]])
 
 
+def _quat2axisangle(quat):
+    """
+    Converts quaternion to axis-angle format.
+    Returns a unit vector direction scaled by its angle in radians.
+    Args:
+        quat (np.array): (x,y,z,w) vec4 float angles
+    Returns:
+        np.array: (ax,ay,az) axis-angle exponential coordinates
+    """
+    # clip quaternion
+    if quat[3] > 1.0:
+        quat[3] = 1.0
+    elif quat[3] < -1.0:
+        quat[3] = -1.0
+
+    den = np.sqrt(1.0 - quat[3] * quat[3])
+    if math.isclose(den, 0.0):
+        # This is (close to) a zero degree rotation, immediately return
+        return np.zeros(3)
+
+    return (quat[:3] * 2.0 * math.acos(quat[3])) / den
+
+
 def all_close(goal, actual, tolerance):
     """
     Convenience method for testing if the values in two lists are within a tolerance of each other.
@@ -187,7 +210,7 @@ class MoveGroupPythonInterfaceTutorial(object):
         current_joints = move_group.get_current_joint_values()
         return all_close(joint_goal, current_joints, 0.01)
 
-    def go_to_pose_goal(self, position=[], orientation=[], gripper_pos=-1):
+    def go_to_pose_goal(self, position=[], orientation=[], gripper_pos=-1, ):
         # Copy class variables to local variables to make the web tutorials more clear.
         # In practice, you should use the class variables directly unless you have a good
         # reason not to.
@@ -238,14 +261,21 @@ if __name__ == '__main__':
 
     myargv = rospy.myargv(argv=sys.argv)
 
+    import debugpy
+    debugpy.listen(('0.0.0.0', 5678))
+    print("Waiting for debugger attach")
+    debugpy.wait_for_client()
+
     # movegroup_interface = MoveGroupPythonInterfaceTutorial()
+    rospy.init_node("rollout_node", anonymous=True)
 
     file_path = myargv[1]
     rospy.loginfo(f"Reading file {file_path}")
-
-    file_paths = glob.glob(os.path.join(file_path, "traj*.pkl"))
+    file_paths = [file_path]
+    file_paths = glob.glob(os.path.join(file_path, "traj015.pkl"))
 
     for trj_path in file_paths:
+        rospy.loginfo(f"trj_path")
         with open(trj_path, "rb") as f:
             sample = pkl.load(f)
 
@@ -270,12 +300,10 @@ if __name__ == '__main__':
         T_camera_aruco = np.append(
             r_camera_aruco, p_camera_aruco, axis=1)
 
-        for t in range(1):  # len(trj)):
-            # cv2.imshow(f'Frame {t}', trj[t]['obs'].get('camera_front_image'))
-            # cv2.waitKey(100)
-            # cv2.destroyAllWindows()
+        for t in range(len(trj)):
             pos = trj.get(t)['obs']['eef_pos']
             quat = trj.get(t)['obs']['eef_quat']
+            ee_aa = trj.get(t)['obs']['ee_aa']
             gripper_pos = trj.get(t)['obs']['gripper_qpos']
 
             img = np.array(trj.get(
@@ -286,10 +314,15 @@ if __name__ == '__main__':
                 [trj[t]['action'][:3]]).T
             gripper_quat_bl = np.array(
                 trj[t]['action'][3:-1])
+            gripper_aa_bl = _quat2axisangle(gripper_quat_bl)
             rospy.loginfo(
-                f"Gripper position {pos} - Gripper orientation {quat} ")
+                f"Gripper position {pos} - Gripper orientation {ee_aa} ")
             rospy.loginfo(
-                f"Gripper action pos {gripper_pos_bl} - Gripper action orientation {gripper_quat_bl} ")
+                f"Gripper action pos {gripper_pos_bl} - Gripper action orientation {gripper_aa_bl} ")
+
+            # cv2.imshow(f'Frame {t}', trj[t]['obs'].get('camera_front_image'))
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             gripper_rot_bl = quat2mat(
                 np.array(gripper_quat_bl))
@@ -315,18 +348,18 @@ if __name__ == '__main__':
                 img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
             cv2.imshow("Camera view", img)
             cv2.waitKey(500)
-            if t == 0:
-                home_pos = pos
-                home_quat = quat
-                home_gripper_pos = gripper_pos
+            # if t == 0:
+            #     home_pos = pos
+            #     home_quat = quat
+            #     home_gripper_pos = gripper_pos
 
-            rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
+            # rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
 
             # success = movegroup_interface.go_to_pose_goal(
             #     position=pos, orientation=quat, gripper_pos=gripper_pos)
             # if success:
             #     rospy.loginfo("Next waypoint")
-            #     rospy.sleep(2)
+            #     rospy.sleep(3)
             #     # input("Press enter to go to next waypoint")
             # else:
             #     rospy.logerr("Failed to move")

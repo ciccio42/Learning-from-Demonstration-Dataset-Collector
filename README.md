@@ -15,22 +15,20 @@ roslaunch ur_robot_driver ur5e_bringup.launch robot_ip:=192.168.1.100 kinematics
 ```bash
 roslaunch ur5e_2f_85_teleoperation ur5e_teleoperation.launch
 ```
+```bash
+roslaunch ur5e_2f_85_controller controller.launch 
+```
 
 # 3. Run camera
 ```bash
 roslaunch zed_camera_controller zed_camera_controller.launch
 ```
 
+
 # 4. Run dataset collector
 
 ```bash
-roslaunch ur5e_2f_85_controller controller.launch 
-```
-
-# 5. Run dataset collector
-
-```bash
-roslaunch dataset_collector dataset_collector.launch 
+roslaunch dataset_collector dataset_collector.launch
 ```
 
 

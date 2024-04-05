@@ -55,6 +55,14 @@ ENV_OBJECTS = {
 }
 
 
+def find_object_position_scene(obj_loc_px_space):
+    pass
+
+
+def insert_object_in_planning_scene(target_obj_id):
+    pass
+
+
 def quat2mat(quaternion):
     """
     Converts given quaternion to matrix.
