@@ -211,8 +211,7 @@ class TrajectoryCollector():
                 color_msg, desired_encoding='rgba8')
             color_cv_image = cv2.cvtColor(
                 color_cv_image, cv2.COLOR_RGBA2RGB)
-
-            if self._step == 0:
+            if self._step == 0 and self._env_camera_name[j] == 'camera_front':
                 global object_loc
                 object_name_list = ENV_OBJECTS[self._task_name]['obj_names']
                 target_obj_id = int(self._task_id_number/4)
@@ -469,7 +468,7 @@ class TrajectoryCollector():
                 # Get TCP Pose
                 tcp_pose = self._tfBuffer.lookup_transform(
                     'base_link', self._tcp_frame_name, rospy.Time())
-                print(tcp_pose)
+                # print(tcp_pose)
                 exception = False
             except ((tf2_ros.LookupException, tf2_ros.ConnectivityException, tf2_ros.ExtrapolationException)) as e:
                 exception = True

@@ -166,7 +166,7 @@ if __name__ == '__main__':
 
                     # Iterate over trajectory
                     traj = sample['traj']
-
+                    print(traj.get(t)['action'][-1])
                     # for each object in the observation get the position
                     obj_positions = dict()
                     if task_name == 'pick_place':

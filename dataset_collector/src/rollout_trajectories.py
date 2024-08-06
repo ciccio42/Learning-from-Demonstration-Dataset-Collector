@@ -266,8 +266,8 @@ if __name__ == '__main__':
     print("Waiting for debugger attach")
     debugpy.wait_for_client()
 
-    # movegroup_interface = MoveGroupPythonInterfaceTutorial()
-    rospy.init_node("rollout_node", anonymous=True)
+    movegroup_interface = MoveGroupPythonInterfaceTutorial()
+    # rospy.init_node("rollout_node", anonymous=True)
 
     file_path = myargv[1]
     rospy.loginfo(f"Reading file {file_path}")
@@ -348,29 +348,29 @@ if __name__ == '__main__':
                 img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
             cv2.imshow("Camera view", img)
             cv2.waitKey(500)
-            # if t == 0:
-            #     home_pos = pos
-            #     home_quat = quat
-            #     home_gripper_pos = gripper_pos
+            if t == 0:
+                home_pos = pos
+                home_quat = quat
+                home_gripper_pos = gripper_pos
 
-            # rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
+            rospy.loginfo(f"Position {pos} - Gripper pos {gripper_pos}")
 
-            # success = movegroup_interface.go_to_pose_goal(
-            #     position=pos, orientation=quat, gripper_pos=gripper_pos)
-            # if success:
-            #     rospy.loginfo("Next waypoint")
-            #     rospy.sleep(3)
-            #     # input("Press enter to go to next waypoint")
-            # else:
-            #     rospy.logerr("Failed to move")
-            #     rospy.logerr("Error during motion")
-            #     exit(-1)
+            success = movegroup_interface.go_to_pose_goal(
+                position=pos, orientation=quat, gripper_pos=gripper_pos)
+            if success:
+                rospy.loginfo("Next waypoint")
+                rospy.sleep(3)
+                # input("Press enter to go to next waypoint")
+            else:
+                rospy.logerr("Failed to move")
+                rospy.logerr("Error during motion")
+                exit(-1)
 
-        # rospy.loginfo("Rollout completed")
-        # pos[2] = pos[2] + 0.10
-        # success = movegroup_interface.go_to_pose_goal(
-        #     position=pos, orientation=quat, gripper_pos=gripper_pos)
-        # input("Press enter to go to home position")
-        # success = movegroup_interface.go_to_pose_goal(
-        #     position=home_pos, orientation=home_quat, gripper_pos=home_gripper_pos)
+        rospy.loginfo("Rollout completed")
+        pos[2] = pos[2] + 0.10
+        success = movegroup_interface.go_to_pose_goal(
+            position=pos, orientation=quat, gripper_pos=gripper_pos)
+        input("Press enter to go to home position")
+        success = movegroup_interface.go_to_pose_goal(
+            position=home_pos, orientation=home_quat, gripper_pos=home_gripper_pos)
     exit(1)

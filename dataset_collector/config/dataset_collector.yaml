@@ -8,13 +8,13 @@ joint_state_topic: /joint_states
 trj_state_topic: /trajectory_state
 tcp_frame_name: tcp_link
 env_camera_topic: /get_frames
-env_camera_name: ['camera_front'] #, "camera_lateral_left", "camera_lateral_right", "eye_in_hand"]
+env_camera_name: ['camera_front', "camera_lateral_left", "camera_lateral_right", "eye_in_hand"]
 frame_rate: 20
 
 # Task Related information
 saving_folder: /media/ciccio/Sandisk/real-world-dataset/only_frontal/reduced_space
 task_name: pick_place
-task_id: 1
-start_trj_cnt: 41
+task_id: 8
+start_trj_cnt: 16
 collect_with_joy: True
 human: False
