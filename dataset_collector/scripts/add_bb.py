@@ -22,14 +22,18 @@ cnt = 0
 press = False
 
 # T_aruco_table @ T_table_bl
-T_aruco_table = np.array([[-1.0, 0.0, 0.0, 0.0],
-                          [0.0, -1.0, 0.0, 0.06],
-                          [0.0, 0.0, 1.0, 0.0],
-                          [0, 0, 0, 1]])
-T_aruco_bl = T_aruco_table  @ np.array([[-1, 0.0, 0, 0.01],
-                                        [0.0, -1.0, 0, 0.612],
-                                        [0, 0, 1, 0.120],
-                                        [0, 0, 0, 1]])
+# T_aruco_table = np.array([[-1.0, 0.0, 0.0, 0.0],
+#                           [0.0, -1.0, 0.0, 0.00],
+#                           [0.0, 0.0, 1.0, 0.0],
+#                           [0, 0, 0, 1]])
+# T_aruco_bl = T_aruco_table  @ np.array([[-1, 0.0, 0, 0.01],
+#                                         [0.0, -1.0, 0, 0.612],
+#                                         [0, 0, 1, 0.120],
+#                                         [0, 0, 0, 1]])
+T_table_bl = np.array([[-1, 0.0, 0, 0.01],
+                        [0.0, -1.0, 0, 0.612],
+                        [0, 0, 1, 0.120],
+                        [0, 0, 0, 1]])
 
 camera_intrinsic = np.array([[345.2712097167969, 0.0, 337.5007629394531],
                              [0.0, 345.2712097167969,
@@ -59,7 +63,7 @@ def check_pick(step):
 
 
 def check_init(step):
-    if step['obs'].get("obj_bb", None) is None:
+    if step['obs'].get("obj_bb", None) is None or len(step['obs']['obj_bb']) == 0:
         return True
     else:
         return False
@@ -84,9 +88,9 @@ def plot_bb(img, obj_bb, show_image=False):
     assert indx == NUM_OBJ, "Number of bounding box must be equal to number of objects"
     if show_image:
         cv2.imwrite("test_bb.png", img)
-        # cv2.imshow("Test", img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
+        cv2.imshow("Test", img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
@@ -130,24 +134,34 @@ if __name__ == '__main__':
             #         cv2.waitKey(0)
             #         cv2.destroyAllWindows()
             # print(trj.get(0)['obs'].keys())
+            
+            # traj = sample['traj']
+            # traj._data.pop(0)
+            # pickle.dump({
+            #     'traj': traj,
+            #     'len': len(traj),
+            #     'env_type': sample['env_type'],
+            #     'task_id': sample['task_id']}, open(file_path, 'wb'))
+            
             for t in range(len(trj)):
+                
                 OBJ_PICKED = False
-                logger.info(f"Timestamp {t}")
+                logger.debug(f"Timestamp {t}")
                 # ENV_OBJECTS['camera_names']:
                 for camera_name in ['camera_front']:
                     # 1. Compute rotation_camera_to_world ()
                     camera_quat = ENV_OBJECTS['camera_orientation'][camera_name]
-                    r_aruco_camera = quat2mat(
+                    r_table_camera = quat2mat(
                         np.array(camera_quat))
-                    p_aruco_camera = ENV_OBJECTS['camera_pos'][camera_name]
-
+                    p_table_camera = ENV_OBJECTS['camera_pos'][camera_name]
+                    
                     camera_quat = ENV_OBJECTS['camera_orientation'][camera_name]
-                    r_camera_aruco = quat2mat(
+                    r_camera_table = quat2mat(
                         np.array(camera_quat)).T
-                    p_camera_aruco = -np.matmul(r_camera_aruco, np.array(
+                    p_camera_table = -np.matmul(r_camera_table, np.array(
                         [ENV_OBJECTS['camera_pos'][camera_name]]).T)
-                    T_camera_aruco = np.append(
-                        r_camera_aruco, p_camera_aruco, axis=1)
+                    T_camera_table = np.append(
+                        r_camera_table, p_camera_table, axis=1)
 
                     obj_bb_novel[camera_name] = dict()
 
@@ -184,7 +198,7 @@ if __name__ == '__main__':
                     for obj_name in object_name_list:
                         if obj_name != 'bin':
                             # obj_positions[obj_name] = obs[f"{obj_name}_pos"]
-                            if t != 0 and obj_name == ENV_OBJECTS[task_name]["id_to_obj"][target_obj_id]:
+                            if t > 0 and obj_name == ENV_OBJECTS[task_name]["id_to_obj"][target_obj_id]:
                                 # check if the robot has pick the object
                                 if check_pick(trj[t]):
                                     logger.debug("Object picked")
@@ -192,6 +206,13 @@ if __name__ == '__main__':
                                     # convert gripper_pos to pixel
                                     gripper_pos_bl = np.array(
                                         [trj[t]['action'][:3]]).T
+                                    
+                                    if '00' in task_path or '08' in task_path:
+                                        gripper_pos_bl[0] = gripper_pos_bl[0] - 0.02
+                                    if '01' in task_path or '04' in task_path or '05' in task_path:
+                                        gripper_pos_bl[0] = gripper_pos_bl[0] + 0.02
+                                    
+                                    
                                     gripper_quat_bl = np.array(
                                         trj[t]['action'][3:-1])
                                     gripper_rot_bl = quat2mat(
@@ -202,14 +223,15 @@ if __name__ == '__main__':
                                         (T_gripper_bl, np.array([[0, 0, 0, 1]])), axis=0)
 
                                     logger.debug(f"TCP_bl\n{gripper_pos_bl}")
-                                    TCP_aruco = T_aruco_bl @ T_gripper_bl
-                                    logger.debug(f"TCP_aruco:\n{TCP_aruco}")
+                                    TCP_table = T_table_bl @ T_gripper_bl
+                                    logger.debug(f"TCP_table:\n{TCP_table}")
                                     logger.debug(
-                                        f"T_camera_aruco\n{T_camera_aruco}")
+                                        f"T_camera_table\n{T_camera_table}")
                                     tcp_camera = np.array(
-                                        [(T_camera_aruco @ TCP_aruco)[:3, -1]]).T
+                                        [(T_camera_table @ TCP_table)[:3, -1]]).T
                                     tcp_camera_scaled = tcp_camera / \
                                         tcp_camera[2][0]
+                                    tcp_camera_scaled[0][0] = - tcp_camera_scaled[0][0]
                                     logger.debug(
                                         f"TCP camera:\n{tcp_camera_scaled}")
                                     tcp_pixel_cord = np.array(
@@ -220,9 +242,9 @@ if __name__ == '__main__':
                                     object_loc[target_obj_id][0] = tcp_pixel_cord[0][0]
                                     object_loc[target_obj_id][1] = tcp_pixel_cord[1][0]
                                     # image = cv2.circle(
-                                    #     obs['camera_front_image'], (gripper_pos_px[0][0], gripper_pos_px[1][0]), 3, (0, 0, 255), 3)
+                                    #     obs['camera_front_image'], (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), 3, (0, 0, 255), 3)
                                     # cv2.imshow(f'Frame {t}', image)
-                                    # cv2.waitKey(0)
+                                    # cv2.waitKey(500)
                                     # cv2.destroyAllWindows()
 
                                 else:
@@ -292,16 +314,16 @@ if __name__ == '__main__':
                         # cv2.waitKey(0)
 
                         # 2. Define the object position with respect to the world
-                        T_aruco_camera = np.concatenate(
-                            (r_aruco_camera, np.array([p_aruco_camera]).T), axis=1)
-                        T_aruco_camera = np.concatenate(
-                            (T_aruco_camera, np.array([[0, 0, 0, 1]])), axis=0)
+                        T_table_camera = np.concatenate(
+                            (r_table_camera, np.array([p_table_camera]).T), axis=1)
+                        T_table_camera = np.concatenate(
+                            (T_table_camera, np.array([[0, 0, 0, 1]])), axis=0)
                         # logger.debug(T_camera_world)
                         p_camera_object = np.expand_dims(
                             np.insert(obj_pos, 3, 1), 0).T
-                        p_aruco_object = (T_aruco_camera @ p_camera_object)
+                        p_table_object = (T_table_camera @ p_camera_object)
                         logger.debug(
-                            f"\nP_aruco_object:\n{p_aruco_object} - \nP_camera_object:\n {p_camera_object}")
+                            f"\nP_table_object:\n{p_table_object} - \nP_camera_object:\n {p_camera_object}")
 
                         p_x_center = object_loc[obj_id][0]
                         p_y_center = object_loc[obj_id][1]
@@ -313,7 +335,7 @@ if __name__ == '__main__':
                         # 3.1 create a box around the object
                         for i in range(8):
                             if i == 0:  # upper-left front corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -323,7 +345,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2+OFFSET],
                                             [0]])
                             elif i == 1:  # upper-right front corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -333,7 +355,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2+OFFSET],
                                             [0]])
                             elif i == 2:  # bottom-left front corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -343,7 +365,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2-OFFSET],
                                             [0]])
                             elif i == 3:  # bottom-right front corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -353,7 +375,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2-OFFSET],
                                             [0]])
                             elif i == 4:  # upper-left back corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[-ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -363,7 +385,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2+OFFSET],
                                             [0]])
                             elif i == 5:  # upper-right back corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[-ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -373,7 +395,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2+OFFSET],
                                             [0]])
                             elif i == 6:  # bottom-left back corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[-ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -383,7 +405,7 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2-OFFSET],
                                             [0]])
                             elif i == 7:  # bottom-right back corner
-                                p_aruco_object_corner = p_aruco_object + \
+                                p_table_object_corner = p_table_object + \
                                     np.array(
                                         [[-ENV_OBJECTS[task_name]
                                           ['obj_dim'][obj_name][2]/2],
@@ -393,9 +415,9 @@ if __name__ == '__main__':
                                          ['obj_dim'][obj_name][1]/2-OFFSET],
                                             [0]])
 
-                            p_camera_object_corner = T_camera_aruco @ p_aruco_object_corner
+                            p_camera_object_corner = T_camera_table @ p_table_object_corner
                             logger.debug(
-                                f"\nP_aruco_object_upper_left:\n{p_aruco_object_corner} -   \nP_camera_object_upper_left:\n {p_camera_object_corner}")
+                                f"\nP_table_object_upper_left:\n{p_table_object_corner} -   \nP_camera_object_upper_left:\n {p_camera_object_corner}")
 
                             # 3.1 Upper-left corner and bottom right corner in pixel coordinate
                             p_camera_object_corner = p_camera_object_corner / \
@@ -435,6 +457,10 @@ if __name__ == '__main__':
                         # convert gripper_pos to pixel
                         gripper_pos_bl = np.array(
                             [trj[t]['action'][:3]]).T
+                        if '00' in task_path or '08' in task_path:
+                            gripper_pos_bl[0] = gripper_pos_bl[0] - 0.02
+                        if '01' in task_path or '04' in task_path or '05' in task_path:
+                            gripper_pos_bl[0] = gripper_pos_bl[0] + 0.02
                         gripper_quat_bl = np.array(
                             trj[t]['action'][3:-1])
                         gripper_rot_bl = quat2mat(
@@ -445,24 +471,25 @@ if __name__ == '__main__':
                             (T_gripper_bl, np.array([[0, 0, 0, 1]])), axis=0)
 
                         logger.debug(f"TCP_bl\n{gripper_pos_bl}")
-                        TCP_aruco = T_aruco_bl @ T_gripper_bl
-                        logger.debug(f"TCP_aruco:\n{TCP_aruco}")
-                        logger.debug(f"T_camera_aruco\n{T_camera_aruco}")
+                        TCP_table = T_table_bl @ T_gripper_bl
+                        logger.debug(f"TCP_table:\n{TCP_table}")
+                        logger.debug(f"T_camera_table\n{T_camera_table}")
                         tcp_camera = np.array(
-                            [(T_camera_aruco @ TCP_aruco)[:3, -1]]).T
+                            [(T_camera_table @ TCP_table)[:3, -1]]).T
                         tcp_camera = tcp_camera/tcp_camera[2][0]
+                        tcp_camera[0][0] = -tcp_camera[0][0]
                         logger.debug(f"TCP camera:\n{tcp_camera}")
                         tcp_pixel_cord = np.array(
                             camera_intrinsic @ tcp_camera, dtype=np.uint32)
                         logger.debug(f"Pixel coordinates\n{tcp_pixel_cord}")
 
-                        # plot point
-                        # img = cv2.circle(
-                        #     img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
+                        #plot point
+                        img = cv2.circle(
+                            img, (tcp_pixel_cord[0][0], tcp_pixel_cord[1][0]), radius=1, color=(255, 0, 0), thickness=-1)
 
                         plot_bb(img=img,
                                 obj_bb=obj_bb_novel[camera_name],
-                                show_image=t == 0)
+                                show_image= False)#t == 0 or OBJ_PICKED)
 
                     # print(obj_bb)
                     traj_bb.append(copy.deepcopy(obj_bb_novel))

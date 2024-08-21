@@ -14,7 +14,7 @@ frame_rate: 20
 # Task Related information
 saving_folder: /media/ciccio/Sandisk/real-world-dataset/only_frontal/reduced_space
 task_name: pick_place
-task_id: 8
-start_trj_cnt: 16
+task_id: 9
+start_trj_cnt: 35
 collect_with_joy: True
 human: False

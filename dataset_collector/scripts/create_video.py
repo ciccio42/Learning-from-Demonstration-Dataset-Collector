@@ -117,7 +117,8 @@ def create_video_for_each_trj(base_path="/", task_name="pick_place"):
             traj_frames_depth = dict()
             bb_frames = []
             for t, step in enumerate(traj_data):
-                for camera, camera_name in enumerate(['camera_front', "camera_lateral_left", "camera_lateral_right", "eye_in_hand"]):
+                # "camera_lateral_left", "camera_lateral_right", "eye_in_hand"
+                for camera, camera_name in enumerate(['camera_front']):
                     if t == 0:
                         traj_frames[camera_name] = []
                         traj_frames_depth[camera_name] = []
@@ -132,7 +133,8 @@ def create_video_for_each_trj(base_path="/", task_name="pick_place"):
                     traj_frames[camera_name].append(img)
                     traj_frames_depth[camera_name].append(depth)
 
-            for camera, camera_name in enumerate(['camera_front', "camera_lateral_left", "camera_lateral_right", "eye_in_hand"]):
+            #  "camera_lateral_left", "camera_lateral_right", "eye_in_hand"
+            for camera, camera_name in enumerate(['camera_front']):
                 out = None
                 traj_height, traj_width, _ = traj_frames[camera_name][0].shape
 
