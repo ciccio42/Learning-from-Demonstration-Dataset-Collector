@@ -15,11 +15,40 @@ logger = logging.getLogger("BB-Creator")
 
 
 PKL_FILE_PATH = "/media/ciccio/Sandisk/real-world-dataset/pick_place/task_00/traj000.pkl"
-NUM_OBJ = 4
+NUM_OBJ = 8
 
 object_loc = []
 cnt = 0
 press = False
+
+BIN_POS_PX_SPACE = {'task_00': {'bin_0': [203, 296],
+                                'bin_1': [303, 300],
+                                'bin_2': [402, 298],
+                                'bin_3': [502, 300]},
+                    'task_01': {'bin_0': [199, 298],
+                                'bin_1': [297, 293],
+                                'bin_2': [399, 294],
+                                'bin_3': [496, 292]},
+                    'task_04': {'bin_0': [206, 304],
+                                'bin_1': [310, 303],
+                                'bin_2': [406, 299],
+                                'bin_3': [506, 298]},
+                    'task_05': {'bin_0': [198, 295],
+                                'bin_1': [298, 291],
+                                'bin_2': [394, 286],
+                                'bin_3': [494, 285]},
+                    'task_08': {'bin_0': [216, 299],
+                                'bin_1': [316, 299],
+                                'bin_2': [417, 298],
+                                'bin_3': [514, 295]},
+                    'task_09': {'bin_0': [213, 293],
+                                'bin_1': [312, 294],
+                                'bin_2': [415, 291],
+                                'bin_3': [518, 289]},
+                    'task_09_2': {'bin_0': [194, 308],
+                                'bin_1': [301, 308],
+                                'bin_2': [402, 308],
+                                'bin_3': [499, 304]},}
 
 # T_aruco_table @ T_table_bl
 # T_aruco_table = np.array([[-1.0, 0.0, 0.0, 0.0],
@@ -63,11 +92,40 @@ def check_pick(step):
 
 
 def check_init(step):
+    if step['obs'].get("obj_bb", None) is not None:
+        for camera_name in step['obs']['obj_bb'].keys():
+            for obj_name in step['obs']['obj_bb'][camera_name].keys():
+                if step['obs']['obj_bb'][camera_name][obj_name]['center'][0] == -1 or step['obs']['obj_bb'][camera_name][obj_name]['center'][1] == -1:
+                    return True
+    
     if step['obs'].get("obj_bb", None) is None or len(step['obs']['obj_bb']) == 0:
         return True
     else:
         return False
 
+
+def get_bin_position(obs, task_name, second_set):
+    # check if bin is present in saved bb
+    if obs['obj_bb']['camera_front'].get('bin', None) is None:
+        if second_set:
+            task_name = f"{task_name}_2"
+        
+        if BIN_POS_PX_SPACE.get(task_name, None) is None:
+            print("Bin position not present need to initialize")
+            img_t = obs['camera_front_image']
+            for bin_indx in range(4):
+                
+                print(f"Select bin with index {bin_indx} [0] is left")
+                cv2.imshow(f'Frame {t}', img_t)
+                cv2.setMouseCallback(
+                    f'Frame {t}', mouse_drawing)
+                cv2.waitKey(0)
+                cv2.destroyAllWindows()
+                print(f"Bin {bin_indx} position {object_loc[-1]}")
+        else:
+            for bin in BIN_POS_PX_SPACE[task_name].items():
+                object_loc.append(bin[1])
+            
 
 def plot_bb(img, obj_bb, show_image=False):
 
@@ -97,9 +155,11 @@ if __name__ == '__main__':
 
     argParser = argparse.ArgumentParser()
     argParser.add_argument(
-        "--task_path", type=str, default="//media/ciccio/Sandisk/real-world-dataset/only_frontal/reduced_space/pick_place/task_01")
+        "--task_path", type=str, default="/media/ciccio/Sandisk/real-world-dataset/only_frontal/reduced_space/pick_place/task_01")
     argParser.add_argument(
         "--debug", action='store_true')
+    argParser.add_argument(
+        "--show_image", action='store_true')
 
     args = argParser.parse_args()
 
@@ -111,12 +171,14 @@ if __name__ == '__main__':
 
     task_path = args.task_path
     task_name = args.task_path.split('/')[-2]
-    logger.info(f"Task name {task_name}")
+    variation_name = args.task_path.split('/')[-1]
+    logger.info(f"Task name {task_name} - Variation {variation_name}")
 
     files_path = glob.glob(os.path.join(args.task_path, "*.pkl"))
     for indx, file_path in enumerate(files_path):
         if True:  # indx == 0:
             logger.info(f"Reading file {file_path}")
+            trj_number = int(file_path.split('traj')[-1].split('.')[0].lstrip())
             object_loc = []
             with open(file_path, "rb") as f:
                 sample = pkl.load(f)
@@ -180,7 +242,7 @@ if __name__ == '__main__':
 
                     # Iterate over trajectory
                     traj = sample['traj']
-                    print(traj.get(t)['action'][-1])
+                    # print(traj.get(t)['action'][-1])
                     # for each object in the observation get the position
                     obj_positions = dict()
                     if task_name == 'pick_place':
@@ -209,9 +271,10 @@ if __name__ == '__main__':
                                     
                                     if '00' in task_path or '08' in task_path:
                                         gripper_pos_bl[0] = gripper_pos_bl[0] - 0.02
-                                    if '01' in task_path or '04' in task_path or '05' in task_path:
+                                    elif '01' in task_path or '04' in task_path or '05' in task_path:
                                         gripper_pos_bl[0] = gripper_pos_bl[0] + 0.02
-                                    
+                                    elif '09' in task_path and trj_number>=22:
+                                        gripper_pos_bl[2] = gripper_pos_bl[2] - 0.04
                                     
                                     gripper_quat_bl = np.array(
                                         trj[t]['action'][3:-1])
@@ -276,9 +339,13 @@ if __name__ == '__main__':
                                     object_loc_dict[obj_name]['center'])
 
                         else:
-                            # obj_positions[obj_name] = ENV_OBJECTS[task_name]['bin_position']
-                            pass
-
+                            # get bin center position
+                            if t == 0:
+                                print("Get bin position")
+                                get_bin_position(trj[t]['obs'],
+                                                 task_name=variation_name,
+                                                 second_set = (variation_name=="task_09" and trj_number>=22))
+                            
                     cnt = 0
                     logger.debug(
                         f"Starting to compute bounding-boxes for timestamp {t}")
@@ -457,10 +524,14 @@ if __name__ == '__main__':
                         # convert gripper_pos to pixel
                         gripper_pos_bl = np.array(
                             [trj[t]['action'][:3]]).T
+                    
                         if '00' in task_path or '08' in task_path:
                             gripper_pos_bl[0] = gripper_pos_bl[0] - 0.02
-                        if '01' in task_path or '04' in task_path or '05' in task_path:
+                        elif '01' in task_path or '04' in task_path or '05' in task_path:
                             gripper_pos_bl[0] = gripper_pos_bl[0] + 0.02
+                        elif '09' in task_path and trj_number>=22:
+                            gripper_pos_bl[2] = gripper_pos_bl[2] - 0.04
+                    
                         gripper_quat_bl = np.array(
                             trj[t]['action'][3:-1])
                         gripper_rot_bl = quat2mat(
@@ -489,7 +560,7 @@ if __name__ == '__main__':
 
                         plot_bb(img=img,
                                 obj_bb=obj_bb_novel[camera_name],
-                                show_image= False)#t == 0 or OBJ_PICKED)
+                                show_image= args.show_image and t==0)#t == 0 or OBJ_PICKED)
 
                     # print(obj_bb)
                     traj_bb.append(copy.deepcopy(obj_bb_novel))
