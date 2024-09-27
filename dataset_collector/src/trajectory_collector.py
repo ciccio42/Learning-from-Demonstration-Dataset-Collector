@@ -107,8 +107,7 @@ class TrajectoryCollector():
     GRIPPER_QVEL = 'gripper_qvel'
     EE_AA = 'ee_aa'
 
-    def __init__(self, env_camera_name: list, env_camera_topic_name: str, gripper_state_topic: str, joint_state_topic: str, trj_state_topic: str, tcp_frame_name: str, frame_rate: int, saving_folder: str, task_name: str, task_id: str, start_trj_cnt: int, home_pos: list, collect_with_joy: bool):
-
+    def __init__(self, env_camera_name: list, env_camera_topic_name: str, gripper_state_topic: str, joint_state_topic: str, trj_state_topic: str, tcp_frame_name: str, frame_rate: int, saving_folder: str, task_name: str, task_id: str, start_trj_cnt: int, home_pos: list, collect_with_joy: bool, incremental: bool = True):
         # Set rostopic name parameters
         self._gripper_state_topic = gripper_state_topic
         self._joint_state_topic = joint_state_topic
@@ -117,6 +116,7 @@ class TrajectoryCollector():
         self._frame = frame_rate
         self._trajectory_cnt = start_trj_cnt
         self._collect_with_joy = collect_with_joy
+        self._incremental = incremental
 
         # moveit service
         self._home_pos = home_pos
@@ -444,22 +444,87 @@ class TrajectoryCollector():
 
         return (quat[:3] * 2.0 * math.acos(quat[3])) / den
 
-    def init_trj(self):
-        self._step = 0
-        self._trajectory = Trajectory()
-        # wait for going in home position
-        enter = None
-        while enter != "":
-            rospy.loginfo("Press enter to go to gome: ")
-            enter = input()
-        # ask for going to home position
-        home_joint_pos_req = GoToJointRequest()
-        home_joint_pos_req.joint_goal_pos = np.array(self._home_pos)
-        home_joint_pos_req.stop_controllers = True
-        result = self._moveit_service_client.call(home_joint_pos_req)
-        if result.success:
-            rospy.loginfo_once(
-                "Robot in home position, ready to get a new trajectory")
+    def init_trj(self, preliminary_traj):
+        
+        if preliminary_traj is None:
+            self._step = 0
+            self._trajectory = Trajectory()
+            # wait for going in home position
+            enter = None
+            while enter != "":
+                rospy.loginfo("Press enter to go to gome: ")
+                enter = input()
+            # ask for going to home position
+            home_joint_pos_req = GoToJointRequest()
+            home_joint_pos_req.joint_goal_pos = np.array(self._home_pos)
+            home_joint_pos_req.stop_controllers = True
+            result = self._moveit_service_client.call(home_joint_pos_req)
+            if result.success:
+                rospy.loginfo_once(
+                    "Robot in home position, ready to get a new trajectory")
+        else:
+            OFFSET = 5
+            self._step = len(preliminary_traj)-OFFSET
+            self._trajectory = Trajectory()
+            for t in range(len(preliminary_traj)-OFFSET):
+                obs = preliminary_traj.get(t)['obs']
+                obj_bb = dict()
+                # set bb in trajectory
+                if t == 0:
+                    color_cv_image = preliminary_traj.get(t)['obs']['camera_front_image_full_size']
+                    color_cv_image = cv2.imdecode(color_cv_image, cv2.IMREAD_COLOR)
+                    global object_loc
+                    object_name_list = ENV_OBJECTS[self._task_name]['obj_names']
+                    target_obj_id = int(self._task_id_number/4)
+                    rospy.logdebug(f"Target object id {target_obj_id}")
+                    obj_bb[self._env_camera_name[0]] = dict()
+                    rospy.logdebug(f"Target object id {target_obj_id}")
+                    # init bounding-center position for bb-generation
+                    for obj_id, obj_name in enumerate(object_name_list):
+                        obj_bb[self._env_camera_name[0]][obj_name] = dict()
+                        if obj_name == ENV_OBJECTS[self._task_name]["id_to_obj"][target_obj_id]:
+                            rospy.loginfo(
+                                f"Get position for target object {obj_name}")
+                            img_t = color_cv_image
+                        else:
+                            rospy.loginfo(
+                                f"Get position for object {obj_name}")
+                            img_t = color_cv_image
+                        cv2.imshow(f'Frame {t}', img_t)
+                        cv2.setMouseCallback(f'Frame {t}', mouse_drawing)
+                        k = cv2.waitKey(0)
+                        cv2.destroyAllWindows()
+                        if k != 32:
+                            object_loc.append([-1, -1])
+
+                        obj_bb[self._env_camera_name[0]][obj_name]['center'] = [
+                            object_loc[obj_id][0], object_loc[obj_id][1]]
+                        obj_bb[self._env_camera_name[0]][obj_name]['upper_left_corner'] = [
+                            -1, -1]
+                        obj_bb[self._env_camera_name[0]][obj_name]['bottom_right_corner'] = [
+                            -1, -1]
+
+                    object_loc = []
+                    
+                obs['obj_bb'] = obj_bb
+
+                self._trajectory.append(obs=obs, 
+                        reward=0,
+                        done=0, 
+                        info=None, 
+                        action=preliminary_traj.get(t)['obs']['action'])
+        
+            # move robot to last valid position
+            joint_pos_req = GoToJointRequest()
+            joint_pos_req.joint_goal_pos = np.array(preliminary_traj.get(t-1)['obs']['state'][:-1])
+            joint_pos_req.joint_goal_pos[0] = preliminary_traj.get(t-1)['obs']['state'][2]
+            joint_pos_req.joint_goal_pos[2] = preliminary_traj.get(t-1)['obs']['state'][0]
+            joint_pos_req.stop_controllers = True
+            result = self._moveit_service_client.call(joint_pos_req)
+            if result.success:
+                rospy.loginfo_once(
+                    "Robot in home position, ready to get a new trajectory")
+            
 
     def get_message(self):
         exception = True
@@ -521,16 +586,18 @@ class TrajectoryCollector():
         rospy.loginfo("Teleoperator in idle mode")
         return False
 
-    def run(self):
+    def run(self, preliminary_traj: Trajectory = None):
 
-        while not rospy.is_shutdown():
+        stop = False
+        
+        while not rospy.is_shutdown() and not stop:
             # press enter to start the collection of a new trajectory
             enter = None
             while enter != "":
                 rospy.loginfo("Press enter to collect a new trajectory: ")
                 enter = input()
 
-            self.init_trj()
+            self.init_trj(preliminary_traj=preliminary_traj)
             rospy.loginfo(
                 f"Collecting task {self._task_name} - Sub task {self._task_id} - Counter {self._trajectory_cnt}")
             trajectory_completed = False
@@ -540,6 +607,10 @@ class TrajectoryCollector():
                 # time_end = rospy.Time.now()
                 # duration = time_end - time_begin
                 # rospy.loginfo(f"Wait for {duration.to_sec()} secs")
+            
+            
+            if not self._incremental:
+                stop = True
 
 
 class TrajectoryCollectorHuman():

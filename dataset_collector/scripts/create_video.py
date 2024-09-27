@@ -123,15 +123,18 @@ def create_video_for_each_trj(base_path="/", task_name="pick_place"):
                         traj_frames[camera_name] = []
                         traj_frames_depth[camera_name] = []
 
-                    img = step["obs"][f'{camera_name}_image']
-                    depth = np.array((np.nan_to_num(
-                        step["obs"][f'{camera_name}_depth'], 2.0)/2.0)*256, dtype=np.uint8)
+                    if step["obs"].get(f'{camera_name}_image_full_size') is not None:
+                        img = cv2.imdecode(step["obs"][f'{camera_name}_image_full_size'], cv2.IMREAD_COLOR)
+                    else:
+                        img = step["obs"][f'{camera_name}_image']
+                    # depth = np.array((np.nan_to_num(
+                    #     step["obs"][f'{camera_name}_depth'], 2.0)/2.0)*256, dtype=np.uint8)
 
                     if len(img.shape) != 3:
                         img = cv2.imdecode(img, cv2.IMREAD_COLOR)
 
                     traj_frames[camera_name].append(img)
-                    traj_frames_depth[camera_name].append(depth)
+                    # traj_frames_depth[camera_name].append(depth)
 
             #  "camera_lateral_left", "camera_lateral_right", "eye_in_hand"
             for camera, camera_name in enumerate(['camera_front']):
@@ -151,10 +154,10 @@ def create_video_for_each_trj(base_path="/", task_name="pick_place"):
                     out = cv2.VideoWriter(os.path.join(
                         video_path, out_path), fourcc, 30, (output_width, output_height))
 
-                    out_path_depth = f"traj_{trj_number}_{camera_name}_depth.mp4"
-                    print(f"Out-Path {out_path_depth}")
-                    out_depth = cv2.VideoWriter(os.path.join(
-                        video_path, out_path_depth), fourcc, 30, (output_width, output_height))
+                    # out_path_depth = f"traj_{trj_number}_{camera_name}_depth.mp4"
+                    # print(f"Out-Path {out_path_depth}")
+                    # out_depth = cv2.VideoWriter(os.path.join(
+                    #     video_path, out_path_depth), fourcc, 30, (output_width, output_height))
 
                 else:
                     out_path = os.path.join(
@@ -179,13 +182,13 @@ def create_video_for_each_trj(base_path="/", task_name="pick_place"):
                     cv2.imwrite("frame.png", traj_frame)
                     if out is not None:
                         out.write(traj_frame)
-                        out_depth.write(cv2.cvtColor(
-                            traj_frames_depth[camera_name][i], cv2.COLOR_GRAY2BGR))
+                        # out_depth.write(cv2.cvtColor(
+                        #     traj_frames_depth[camera_name][i], cv2.COLOR_GRAY2BGR))
                     else:
                         cv2.imwrite(out_path, traj_frame)
                 if out is not None:
                     out.release()
-                    out_depth.release()
+                    # out_depth.release()
 
 
 if __name__ == '__main__':

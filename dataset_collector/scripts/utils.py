@@ -91,7 +91,7 @@ def _compress_obs(obs):
     return obs
 
 
-def overwrite_pkl_file(pkl_file_path, sample, traj_obj_bb):
+def overwrite_pkl_file(pkl_file_path, sample, traj_obj_bb, ):
     # get trajectory from sample
     new_sample = copy.deepcopy(sample)
 
@@ -165,3 +165,80 @@ def quat2mat(quaternion):
             [q2[1, 3] - q2[2, 0], q2[2, 3] + q2[1, 0], 1.0 - q2[1, 1] - q2[2, 2]],
         ]
     )
+
+
+def euler2mat(euler):
+    """
+    Converts euler angles into rotation matrix form
+
+    Args:
+        euler (np.array): (r,p,y) angles
+
+    Returns:
+        np.array: 3x3 rotation matrix
+
+    Raises:
+        AssertionError: [Invalid input shape]
+    """
+
+    euler = np.asarray(euler, dtype=np.float64)
+    assert euler.shape[-1] == 3, "Invalid shaped euler {}".format(euler)
+
+    ai, aj, ak = -euler[..., 2], -euler[..., 1], -euler[..., 0]
+    si, sj, sk = np.sin(ai), np.sin(aj), np.sin(ak)
+    ci, cj, ck = np.cos(ai), np.cos(aj), np.cos(ak)
+    cc, cs = ci * ck, ci * sk
+    sc, ss = si * ck, si * sk
+
+    mat = np.empty(euler.shape[:-1] + (3, 3), dtype=np.float64)
+    mat[..., 2, 2] = cj * ck
+    mat[..., 2, 1] = sj * sc - cs
+    mat[..., 2, 0] = sj * cc + ss
+    mat[..., 1, 2] = cj * sk
+    mat[..., 1, 1] = sj * ss + cc
+    mat[..., 1, 0] = sj * cs - sc
+    mat[..., 0, 2] = -sj
+    mat[..., 0, 1] = cj * si
+    mat[..., 0, 0] = cj * ci
+    return mat
+
+
+def mat2quat(rmat):
+    """
+    Converts given rotation matrix to quaternion.
+
+    Args:
+        rmat (np.array): 3x3 rotation matrix
+
+    Returns:
+        np.array: (x,y,z,w) float quaternion angles
+    """
+    M = np.asarray(rmat).astype(np.float32)[:3, :3]
+
+    m00 = M[0, 0]
+    m01 = M[0, 1]
+    m02 = M[0, 2]
+    m10 = M[1, 0]
+    m11 = M[1, 1]
+    m12 = M[1, 2]
+    m20 = M[2, 0]
+    m21 = M[2, 1]
+    m22 = M[2, 2]
+    # symmetric matrix K
+    K = np.array(
+        [
+            [m00 - m11 - m22, np.float32(0.0), np.float32(0.0), np.float32(0.0)],
+            [m01 + m10, m11 - m00 - m22, np.float32(0.0), np.float32(0.0)],
+            [m02 + m20, m12 + m21, m22 - m00 - m11, np.float32(0.0)],
+            [m21 - m12, m02 - m20, m10 - m01, m00 + m11 + m22],
+        ]
+    )
+    K /= 3.0
+    # quaternion is Eigen vector of K that corresponds to largest eigenvalue
+    w, V = np.linalg.eigh(K)
+    inds = np.array([3, 0, 1, 2])
+    q1 = V[inds, np.argmax(w)]
+    if q1[0] < 0.0:
+        np.negative(q1, q1)
+    inds = np.array([1, 2, 3, 0])
+    return q1[inds]
