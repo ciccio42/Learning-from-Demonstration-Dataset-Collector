@@ -16,7 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   sensor_msgs
   cv_bridge
-  camera_controller
+  zed_camera_controller
   ur5e_2f_85_controller
   ur5e_2f_85_teleoperation
 )
